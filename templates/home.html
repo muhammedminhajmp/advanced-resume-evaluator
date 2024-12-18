@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Upload</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+</head>
+<body class="bg-light">
+    <div class="container mt-5">
+        <h2 class="text-center">Upload Resumes for Analysis</h2>
+        <form id="uploadForm" enctype="multipart/form-data" method="POST" action="/api/upload_resume">
+
+            <div class="form-group">
+                <label for="resume">Choose Resumes (PDF or ZIP):</label>
+                <input type="file" class="form-control" id="resume" name="file" multiple required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Upload Resumes</button>
+        </form>
+
+        <!-- Results Section -->
+        <div id="results" class="mt-5" style="display: none;">
+            <h3>Resume Analysis Results</h3>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>File Name</th>
+                        <th>Extracted Names</th>
+                        <th>Extracted Locations</th>
+                        <th>Extracted Emails</th>
+                        <th>Extracted Phone Numbers</th>
+                        <th>Matched Skills</th>
+                        <th>Relevance Score</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsTableBody"></tbody>
+            </table>
+            <button class="btn btn-secondary" onclick="window.location.reload();">Upload Another Resume</button>
+            <a id="downloadLink" href="#" class="btn btn-success" style="display: none;">Download Results as Excel</a>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            $('#uploadForm').on('submit', function(event) {
+                event.preventDefault();
+                var formData = new FormData(this);
+
+                $.ajax({
+                    url: '/api/upload_resume',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        // Clear previous results
+                        $('#resultsTableBody').empty();
+
+                        // Loop through each result and append it to the table
+                        response.data.forEach(function(resume) {
+                            var matchedSkills = JSON.stringify(resume.matched_skills, null, 2).replace(/\n/g, '<br>').replace(/ /g, '&nbsp;');
+                            var row = `
+                                <tr>
+                                    <td>${resume.file_name}</td>
+                                    <td>${resume.entities.names.join(', ') || 'None'}</td>
+                                    <td>${resume.entities.locations.join(', ') || 'None'}</td>
+                                    <td>${resume.entities.emails.join(', ') || 'None'}</td>
+                                    <td>${resume.entities.phone_numbers.join(', ') || 'None'}</td>
+                                    <td><pre>${matchedSkills}</pre></td>
+                                    <td>${resume.score}</td>
+                                </tr>
+                            `;
+                            $('#resultsTableBody').append(row);
+                        });
+
+                        // Show the results section
+                        $('#results').show();
+
+                        // Show the download link for the Excel file
+                        $('#downloadLink').attr('href', response.download_link).show();
+                    },
+                    error: function(xhr, status, error) {
+                        alert('Error: ' + xhr.responseJSON.error);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

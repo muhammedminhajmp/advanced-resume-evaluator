@@ -1,0 +1,4 @@
+Flask==2.2.3
+werkzeug==2.2.3
+spacy==3.5.0
+pdfplumber==0.8.0
