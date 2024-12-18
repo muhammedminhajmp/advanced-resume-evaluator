@@ -11,14 +11,23 @@
     <div class="container mt-5">
         <h2 class="text-center">Upload Resumes for Analysis</h2>
         <form id="uploadForm" enctype="multipart/form-data" method="POST" action="/api/upload_resume">
-
             <div class="form-group">
-                <label for="resume">Choose Resumes (PDF or ZIP):</label>
+                <label for="resume">Choose Resume (PDF):</label>
                 <input type="file" class="form-control" id="resume" name="file" multiple required>
             </div>
-            <button type="submit" class="btn btn-primary btn-block">Upload Resumes</button>
+            <div class="form-group">
+                <label for="category">Select Job Category:</label>
+                <select class="form-control" id="category" name="category" required>
+                    <option value="python">Python Developer</option>
+                    <option value="react">React Developer</option>
+                    <option value="uiux">UI/UX Designer</option>
+                    <option value="tester">Software Tester</option>
+                    <option value="php">PHP Developer</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Upload Resume</button>
         </form>
-
+        
         <!-- Results Section -->
         <div id="results" class="mt-5" style="display: none;">
             <h3>Resume Analysis Results</h3>

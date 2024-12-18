@@ -9,14 +9,47 @@ import re
 import pandas as pd
 
 # Define the keywords and criteria for Software Testers
+# REQUIRED_SKILLS = {
+#     "testing_types": ["manual testing", "automation testing", "api testing", "performance testing", "regression testing",
+#                       "functional testing"],
+#     "tools": ["selenium", "postman", "jmeter", "testng"],
+#     "bug_tracking_tools": ["jira"],
+#     "programming_languages": ["java"],
+#     "methodologies": ["agile"]
+# }
+
 REQUIRED_SKILLS = {
-    "testing_types": ["manual testing", "automation testing", "api testing", "performance testing", "regression testing",
-                      "functional testing"],
-    "tools": ["selenium", "postman", "jmeter", "testng"],
-    "bug_tracking_tools": ["jira"],
-    "programming_languages": ["java"],
-    "methodologies": ["agile"]
+    "python": {
+        "programming_languages": ["python", "django", "flask"],
+        "tools": ["pycharm", "jupyter", "git"],
+        "frameworks": ["django", "flask"],
+        "methodologies": ["agile", "scrum"],
+    },
+    "react": {
+        "programming_languages": ["javascript", "typescript"],
+        "tools": ["react", "redux", "webpack"],
+        "frameworks": ["react", "next.js"],
+        "methodologies": ["agile", "scrum"],
+    },
+    "uiux": {
+        "design_tools": ["figma", "adobe xd", "sketch"],
+        "skills": ["wireframing", "prototyping", "usability testing"],
+        "methodologies": ["design thinking", "user research"],
+    },
+    "tester": {
+        "testing_types": ["manual testing", "automation testing", "api testing"],
+        "tools": ["selenium", "postman", "jmeter"],
+        "bug_tracking_tools": ["jira"],
+        "programming_languages": ["java", "python"],
+    },
+    "php": {
+        "programming_languages": ["php", "javascript", "sql"],
+        "tools": ["xampp", "laravel", "composer"],
+        "methodologies": ["mvc", "rest"],
+    },
 }
+
+
 
 # Load spaCy's English model for NER
 nlp = spacy.load("en_core_web_sm")
@@ -53,12 +86,36 @@ def evaluate_resume(text, required_skills):
                 matched_skills[category].append(keyword)
     return matched_skills
 
-def score_resume(matched_skills):
-    """Calculate a simple score based on matched skills."""
-    total_keywords = sum(len(keywords) for keywords in REQUIRED_SKILLS.values())
-    matched_keywords = sum(len(skills) for skills in matched_skills.values())
-    score = (matched_keywords / total_keywords) * 100
-    return round(score, 2)  # Round to 2 decimal places
+# def score_resume(matched_skills):
+#     """Calculate a simple score based on matched skills."""
+#     total_keywords = sum(len(keywords) for keywords in REQUIRED_SKILLS.values())
+#     matched_keywords = sum(len(skills) for skills in matched_skills.values())
+#     score = (matched_keywords / total_keywords) * 100
+#     return round(score, 2)  # Round to 2 decimal places
+  
+def score_resume(matched_skills, category):
+    """Calculate a score based on matched skills for a specific category."""
+    required_skills = REQUIRED_SKILLS.get(category, {})
+
+    # Initialize a counter for matched skills
+    matched_for_category = []
+
+    # Go through each skill set in the required skills and check for matches in the matched_skills
+    for skill_type, required_list in required_skills.items():
+        matched_for_category.extend([skill for skill in matched_skills.get(skill_type, []) if skill in required_list])
+
+    total_required_skills = sum(len(skills) for skills in required_skills.values())
+    matched_skills_count = len(matched_for_category)
+
+    if total_required_skills == 0:  # Avoid division by zero
+        return 0.0
+
+    # Calculate score as a percentage
+    score = (matched_skills_count / total_required_skills) * 100
+    return round(score, 2)
+
+
+
 
 def extract_name_from_filename(filename):
     """
@@ -91,7 +148,9 @@ def extract_entities(text, filename=None):
         "phone_numbers": list(set(phone_numbers)),
     }
 
-def process_resume(pdf_path, filename):
+
+
+def process_resume(pdf_path, category, filename=None):
     """
     Process a single resume file and return the extracted details, matched skills, and score.
     """
@@ -99,8 +158,9 @@ def process_resume(pdf_path, filename):
     if not text:
         return None
 
-    matched_skills = evaluate_resume(text, REQUIRED_SKILLS)
-    score = score_resume(matched_skills)
+    matched_skills = evaluate_resume(text, REQUIRED_SKILLS[category])
+    # score = score_resume(matched_skills)
+    score = score_resume(matched_skills, category)  # Pass category for scoring
     extracted_entities = extract_entities(text, filename)
 
     return {
@@ -108,51 +168,17 @@ def process_resume(pdf_path, filename):
         "entities": extracted_entities,
         "matched_skills": matched_skills,
         "score": score,
+        "category": category
     }
+
+
 
 @app.route('/')
 def index():
     """Render the index.html page."""
     return render_template('home.html')
 
-# @app.route('/api/upload_resume', methods=['POST'])
-# def upload_resume():
-#     if 'file' not in request.files:
-#         return jsonify({'error': 'No file part'}), 400
 
-#     files = request.files.getlist('file')
-
-#     if not files:
-#         return jsonify({'error': 'No files selected'}), 400
-
-#     results = []
-
-#     for file in files:
-#         if file.filename.endswith('.zip'):
-#             # Handle zip file containing multiple PDFs
-#             zip_data = file.read()
-#             with zipfile.ZipFile(io.BytesIO(zip_data)) as zip_file:
-#                 for zip_name in zip_file.namelist():
-#                     if zip_name.endswith('.pdf'):
-#                         zip_file.extract(zip_name, app.config['UPLOAD_FOLDER'])
-#                         file_path = os.path.join(app.config['UPLOAD_FOLDER'], zip_name)
-#                         result = process_resume(file_path, zip_name)
-#                         if result:
-#                             results.append(result)
-#         elif allowed_file(file.filename):
-#             filename = secure_filename(file.filename)
-#             file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-#             file.save(file_path)
-#             result = process_resume(file_path, filename)
-#             if result:
-#                 results.append(result)
-#         else:
-#             return jsonify({'error': f'File type {file.filename.split(".")[-1]} not allowed'}), 400
-    
-#     if not results:
-#         return jsonify({'error': 'No valid resumes found'}), 400
-    
-#     return jsonify({'data': results})
 
 import pandas as pd
 
@@ -164,6 +190,10 @@ def upload_resume():
         return jsonify({'error': 'No file part'}), 400
 
     files = request.files.getlist('file')
+    category = request.form.get('category')  # Get the job category from the form
+
+    if not category or category not in REQUIRED_SKILLS:
+        return jsonify({'error': 'Invalid or missing category'}), 400
 
     if not files:
         return jsonify({'error': 'No files selected'}), 400
@@ -179,22 +209,22 @@ def upload_resume():
                     if zip_name.endswith('.pdf'):
                         zip_file.extract(zip_name, app.config['UPLOAD_FOLDER'])
                         file_path = os.path.join(app.config['UPLOAD_FOLDER'], zip_name)
-                        result = process_resume(file_path, zip_name)
+                        result = process_resume(file_path, category, zip_name)
                         if result:
                             results.append(result)
         elif allowed_file(file.filename):
             filename = secure_filename(file.filename)
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(file_path)
-            result = process_resume(file_path, filename)
+            result = process_resume(file_path, category, filename)
             if result:
                 results.append(result)
         else:
             return jsonify({'error': f'File type {file.filename.split(".")[-1]} not allowed'}), 400
-    
+
     if not results:
         return jsonify({'error': 'No valid resumes found'}), 400
-    
+
     # Save results to an Excel spreadsheet
     output_file = os.path.join(app.config['UPLOAD_FOLDER'], 'resume_analysis.xlsx')
     
@@ -203,6 +233,7 @@ def upload_resume():
     for result in results:
         spreadsheet_data.append({
             'File Name': result['file_name'],
+            'Category': category,  # Include the category
             'Names': ', '.join(result['entities']['names']),
             'Locations': ', '.join(result['entities']['locations']),
             'Emails': ', '.join(result['entities']['emails']),
@@ -225,6 +256,8 @@ def upload_resume():
 def download_file(filename):
     """Route to download the saved Excel file."""
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
+
 
 if __name__ == "__main__":
     app.run(debug=True)
