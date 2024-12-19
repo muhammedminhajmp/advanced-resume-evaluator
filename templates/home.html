@@ -6,14 +6,77 @@
     <title>Resume Upload</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Arial', sans-serif;
+        }
+        .container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+        }
+        h2 {
+            color: #343a40;
+            margin-bottom: 30px;
+        }
+        .form-group label {
+            font-weight: bold;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            border: none;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            border: none;
+        }
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        .table{
+            overflow-x: auto;
+        }
+        .table th, .table td {
+            vertical-align: middle;
+        }
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-size: 0.85rem;
+        }
+        .results-section {
+            display: none;
+            margin-top: 40px;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #6c757d;
+        }
+        #downloadLink {
+            display: none;
+            list-style: none;
+            text-decoration: none;
+            color: white;
+        }
+        /* Custom styles for form inputs */
+        input[type="file"], select {
+            cursor: pointer;
+        }
+    </style>
 </head>
-<body class="bg-light">
+<body>
     <div class="container mt-5">
         <h2 class="text-center">Upload Resumes for Analysis</h2>
         <form id="uploadForm" enctype="multipart/form-data" method="POST" action="/api/upload_resume">
             <div class="form-group">
                 <label for="resume">Choose Resume (PDF):</label>
-                <input type="file" class="form-control" id="resume" name="file" multiple required>
+                <input type="file" class="form-control-file" id="resume" name="file" multiple required>
             </div>
             <div class="form-group">
                 <label for="category">Select Job Category:</label>
@@ -27,28 +90,41 @@
             </div>
             <button type="submit" class="btn btn-primary btn-block">Upload Resume</button>
         </form>
-        
-        <!-- Results Section -->
-        <div id="results" class="mt-5" style="display: none;">
-            <h3>Resume Analysis Results</h3>
-            <table class="table table-bordered">
-                <thead>
-                    <tr>
-                        <th>File Name</th>
-                        <th>Extracted Names</th>
-                        <th>Extracted Locations</th>
-                        <th>Extracted Emails</th>
-                        <th>Extracted Phone Numbers</th>
-                        <th>Matched Skills</th>
-                        <th>Relevance Score</th>
-                    </tr>
-                </thead>
-                <tbody id="resultsTableBody"></tbody>
-            </table>
-            <button class="btn btn-secondary" onclick="window.location.reload();">Upload Another Resume</button>
-            <a id="downloadLink" href="#" class="btn btn-success" style="display: none;">Download Results as Excel</a>
-        </div>
+
+   
     </div>
+
+    <div class="">
+  <!-- Results Section -->
+  <div id="results" class="results-section container mt-5">
+    <h3 class="text-center mb-4">Resume Analysis Results</h3>
+    <table class="table table-striped table-bordered">
+        <thead class="thead-dark">
+            <tr>
+                <th>File Name</th>
+                <th>Extracted Names</th>
+                <th>Extracted Locations</th>
+                <th>Extracted Emails</th>
+                <th>Extracted Phone Numbers</th>
+                <th>Matched Skills</th>
+                <th>Relevance Score</th>
+            </tr>
+        </thead>
+        <tbody id="resultsTableBody"></tbody>
+    </table>
+    <div class="d-flex justify-content-end " style="gap: 7px;">
+        <button class="btn btn-secondary" onclick="window.location.reload();">Upload Another Resume</button>
+        <a id="downloadLink" href="#" class="btn btn-success">Download Results as Excel</a>
+    </div>
+    
+</div>
+    </div>
+
+       
+
+    <footer class="footer">
+        <p>&copy; 2024 Resume Upload Service</p>
+    </footer>
 
     <script>
         $(document).ready(function() {
@@ -69,7 +145,7 @@
                         // Loop through each result and append it to the table
                         response.data.forEach(function(resume) {
                             var matchedSkills = JSON.stringify(resume.matched_skills, null, 2).replace(/\n/g, '<br>').replace(/ /g, '&nbsp;');
-                            var row = `
+                            var row = ` 
                                 <tr>
                                     <td>${resume.file_name}</td>
                                     <td>${resume.entities.names.join(', ') || 'None'}</td>
@@ -83,11 +159,11 @@
                             $('#resultsTableBody').append(row);
                         });
 
-                        // Show the results section
-                        $('#results').show();
+                        // Show the results section with animation
+                        $('#results').fadeIn();
 
                         // Show the download link for the Excel file
-                        $('#downloadLink').attr('href', response.download_link).show();
+                        $('#downloadLink').attr('href', response.download_link).fadeIn();
                     },
                     error: function(xhr, status, error) {
                         alert('Error: ' + xhr.responseJSON.error);
